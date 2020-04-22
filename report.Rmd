@@ -1,0 +1,353 @@
+---
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+# toc: true
+---
+
+# Dados Camada 1
+
+```{r, echo = F}
+extract <- function(text) {
+  text <- gsub(" ", "", text)
+  split <- strsplit(text, ",", fixed = FALSE)[[1]]
+  as.numeric(split)
+}
+#data output 1
+y1 <- extract(input$y1)
+x1 <- extract(input$x1)
+yval1 <- extract(input$yval1)
+xval1 <- extract(input$xval1)
+dat <- data.frame(x, y, yval1, xval1)
+colnames(dat) = c('Força camada 1 (kN)', 'Peso (mg)', 'Força Validação camada 1 (kN)', 'Peso Validação (mg)')
+kable(dat)
+                if(anyNA(x1) | length(x1) < 2 | anyNA(y1) | length(y1) < 2) {
+                        "Entrada Inválida ou quantidade de dados insuficiente"
+                } else if (length (x1) != length (y1)){
+                        "NÃºmero de dados de x deve ser igual ao número de dados de y"
+                } else {
+                        withMathJax(
+                                paste0("\\(\\bar{x} = \\) ", round(mean(x1), 3)),
+                                br(),
+                                paste0("\\(\\bar{y} = \\) ", round(mean(y1), 3)),
+                                br(),
+                                paste0("\\(n = \\) ", length(x1))
+                        )
+                }
+```
+
+Plot
+
+```{r, echo = F}
+ y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                yval1 <- extract(input$yval1)
+                xval1 <- extract(input$xval1)
+                #dat <- as.data.frame(x,y)
+                fit1 <- lm(y1 ~ x1)
+                newx1 <- seq(min(x1), max(x1),by = 0.05)
+                conf_interval1 <- predict(fit1, newdata = data.frame(x1 = newx1), 
+                                          interval="confidence",
+                                          level = 0.95)
+                yvalid <- round(predict(fit1, newdata = data.frame(x1 = xval1)),2)
+                mse_train <- mean(fit1$residuals^2) 
+                mse_val <- mean((yval1 - yvalid)^2)
+                plot(x1, y1, pch = 19, col = "black", cex = 1.5, 
+                     xlab = input$xlab, 
+                     ylab = input$ylab)
+                abline(fit1, col = "red", lwd = 2)
+                points(xval1, yval1, pch = 19, col = "blue", cex = 1.5)
+                points(xval1, yvalid, col = "salmon", cex = 2)
+                        lines(newx1, conf_interval1[,2], col="blue", lty=2)
+                        lines(newx1, conf_interval1[,3], col="blue", lty=2)
+                        legend("topleft", inset = 0.05, legend = c("Pontos Exp.", "fit", "Val. Exp.","Val. Calc.", "C.I 95%"),
+                               col = c("black", "red", "blue", "salmon", "blue"), lty=1:2, cex=1)                           
+```
+
+# Peso Desejado Camada 1
+
+```{r echo = F}
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                yval1 <- extract(input$yval1)
+                xval1 <- extract(input$xval1)
+                #dat <- as.data.frame(x,y)
+                fit1 <- lm(y1 ~ x1)
+                yvalid <- round(predict(fit1, newdata = data.frame(x1 = xval1)),2)
+                mse_train <- round(mean(fit1$residuals^2),2) 
+                mse_val <- round(mean((yval1 - yvalid)^2),2)
+                ymin1 <- extract(input$peso1)*(1 - extract(input$desvio1)/100)
+                ymax1 <- extract(input$peso1)*(1 + extract(input$desvio1)/100)
+                fmin1 <- round((ymin1 - (fit1$coefficients[1]))/fit1$coefficients[2],2)
+                fmed1 <- round((extract(input$peso1) - (fit1$coefficients[1]))/fit1$coefficients[2],2)
+                fmax1 <- round((ymax1 - (fit1$coefficients[1]))/fit1$coefficients[2],2)
+                withMathJax(
+                        br(),
+                        print(paste0("Erro quadrático médio modelo: ", mse_train, "mg")),
+                        br(),
+                        print(paste0("Erro quadrático médio validação: ", mse_val, "mg")),
+                        br(),
+                        br(),
+                        print(paste0("Peso mínimo aceitável: ", ymin1, "mg")),
+                        br(),
+                        print(paste0("Peso máximo aceitável: ", ymax1, "mg")),
+                        br(),
+                        br(),
+                        print(paste0("Força média: ", fmed1, "kN")),
+                        br(),
+                        print(paste0("Força mínima: ", fmin1, "kN")),
+                        br(),
+                        print(paste0("Força máxima: ", fmax1, "kN"))
+                )
+```
+
+# Computed parameters in R para camada 1
+
+```{r, echo = F}
+summary(fit1)
+```
+
+# Dados Camada 2
+
+```{r, echo = F}
+#data output 2
+y2 <- extract(input$y2)
+x2 <- extract(input$x2)
+#fit da camada 1 para camada 2
+y1 <- extract(input$y1)
+x1 <- extract(input$x1)
+fit1 <- lm(y1 ~ x1)
+f12 <- extract(input$f12)
+p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+pcam2 <- y2 - p12
+dat2 <- data.frame(f12, p12, x2, y2, pcam2)
+
+colnames(dat2) = c('Força cam. 1 (kN)', 'Peso est. cam. 1 mg', 'Força cam. 2 (kN)', "Peso total mg", "Peso camada 2 mg")
+kable(dat2)
+                if(anyNA(x2) | length(x2) < 2 | anyNA(y2) | length(y2) < 2) {
+                        "Entrada Inválida ou quantidade de dados insuficiente"
+                } else if (length (x2) != length (y2)){
+                        "Numero de dados de x deve ser igual ao número de dados de y"
+                } else {
+                        withMathJax(
+                                paste0("\\(\\bar{x} = \\) ", round(mean(x2), 3)),
+                                br(),
+                                paste0("\\(\\bar{y} = \\) ", round(mean(y2), 3)),
+                                br(),
+                                paste0("\\(n = \\) ", length(x2))
+                        )
+                }
+```
+
+Plot Camada 2
+
+```{r, echo = F}
+ p2 <- extract(input$y2)
+                x2 <- extract(input$x2)
+                #dat <- as.data.frame(x,y)
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f12 <- extract(input$f12)
+                p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+                y2 <- as.numeric(p2) - as.numeric(p12)
+                fit2 <- lm(y2 ~ x2)
+                newx2 = seq(min(x2),max(x2),by = 0.05)
+                conf_interval2 <- predict(fit2, newdata=data.frame(x2 = newx2), 
+                                          interval="confidence",
+                                          level = 0.95)
+                plot(x2, y2, pch = 1,  
+                     xlab = input$xlab2, 
+                     ylab = input$ylab2)
+                abline(fit2, col = "red", lwd = 2)
+                        lines(newx2, conf_interval2[,2], col="blue", lty=2)
+                        lines(newx2, conf_interval2[,3], col="blue", lty=2)
+                        legend("topleft", inset = 0.05, legend = c("Pontos Exp.", "fit", "C.I 95%"),
+                               col = c("black", "red", "blue"), lty=1:2, cex=1)                           
+```
+
+# Peso Desejado Camada 2
+
+```{r echo = F}
+p2 <- extract(input$y2)
+                x2 <- extract(input$x2)
+                #dat <- as.data.frame(x,y)
+                #dat <- as.data.frame(x,y)
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f12 <- extract(input$f12)
+                p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+                y2 <- as.numeric(p2) - as.numeric(p12)
+                fit2 <- lm(y2 ~ x2)
+                ymin2 <- extract(input$peso2)*(1 - extract(input$desvio2)/100)
+                ymax2 <- extract(input$peso2)*(1 + extract(input$desvio2)/100)
+                fmin2 <- round((ymin2 - (fit2$coefficients[1]))/fit2$coefficients[2],2)
+                fmed2 <- round((extract(input$peso2) - (fit2$coefficients[1]))/fit2$coefficients[2],2)
+                fmax2 <- round((ymax2 - (fit2$coefficients[1]))/fit2$coefficients[2],2)
+                withMathJax(
+                        print(paste0("Peso mínimo aceitável camada 2: ", ymin2, "mg")),
+                        br(),
+                        print(paste0("Peso máximo aceitável camada 2: ", ymax2, "mg")),
+                        br(),
+                        br(),
+                        print(paste0("Força média camada 2: ", fmed2, "kN")),
+                        br(),
+                        print(paste0("Força mínima camada 2: ", fmin2, "kN")),
+                        br(),
+                        print(paste0("Força máxima camada 2: ", fmax2, "kN")),
+                        br(),
+                        br()
+                )
+```
+
+# Computed parameters in R para a camada 2
+
+```{r, echo = F}
+summary(fit2)
+```
+
+# Dados Camada 3
+
+```{r, echo = F}
+
+y3 <- extract(input$y3)
+p3 <- y3
+x3 <- extract(input$x3)
+#fit da camada 1 para camada 3
+                y1 <- as.numeric(extract(input$y1))
+                x1 <- as.numeric(extract(input$x1))
+                fit1 <- lm(y1 ~ x1)
+                f13 <- extract(input$f13)
+                p13 <- round(predict(fit1, newdata = data.frame(x1 = f13)),2)
+                pcam13 <- p13
+                #fit da camada 2 para camada 3
+                p2 <- as.numeric(extract(input$y2))
+                x2 <- as.numeric(extract(input$x2))
+                #dat <- as.data.frame(x,y)
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f12 <- extract(input$f12)
+                p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+                y2 <- as.numeric(p2) - as.numeric(p12)
+                fit2 <- lm(y2 ~ x2)
+                f23 <- extract(input$f23)
+                p23 <- round(predict(fit2, newdata = data.frame(x2 = f13)),2)
+                pcam23 <- p23
+                
+pcam33 <- p3 - (pcam13 + pcam23)
+                #fit da camada 2 para camada 3
+dat3 <- data.frame(f13, p13, f23, p23, x3, p3, pcam33)
+colnames(dat3) = c('Força cam. 1 (kN)', 'Peso est. cam. 1 mg','Força cam. 2 (kN)', 'Peso est. cam. 2 mg', 'Força cam. 3 (kN)', "Peso total mg", "Peso camada 3 mg")
+kable(dat3)
+                if(anyNA(x3) | length(x3) < 2 | anyNA(y3) | length(y3) < 2) {
+                        "Entrada Inválida ou quantidade de dados insuficiente"
+                } else if (length (x3) != length (y3)){
+                        "Numero de dados de x deve ser igual ao número de dados de y"
+                } else {
+                        withMathJax(
+                                paste0("\\(\\bar{x} = \\) ", round(mean(x3), 3)),
+                                br(),
+                                paste0("\\(\\bar{y} = \\) ", round(mean(y3), 3)),
+                                br(),
+                                paste0("\\(n = \\) ", length(x3))
+                        )
+                }
+```
+
+Plot Camada 3
+
+```{r, echo = F}
+ p3 <- extract(input$y3)
+                x3 <- extract(input$x3)
+                #fit da camada 1 para camada 3
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f13 <- extract(input$f13)
+                p13 <- round(predict(fit1, newdata = data.frame(x1 = f13)),2)
+                pcam13 <- p13
+                #fit da camada 2 para camada 3
+                p2 <- as.numeric(extract(input$y2))
+                x2 <- as.numeric(extract(input$x2))
+                #dat <- as.data.frame(x,y)
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f12 <- extract(input$f12)
+                p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+                y2 <- as.numeric(p2) - as.numeric(p12)
+                fit2 <- lm(y2 ~ x2)
+                f23 <- extract(input$f23)
+                p23 <- round(predict(fit2, newdata = data.frame(x2 = f13)),2)
+                pcam23 <- p23
+                pcam33 <- p3 - (pcam13 + pcam23)
+                fit3 <- lm(pcam33 ~ x3)
+                newx3 = seq(min(x3),max(x3),by = 0.05)
+                conf_interval3 <- predict(fit3, newdata=data.frame(x3 = newx3), 
+                                          interval="confidence",
+                                          level = 0.95)
+                plot(x3, pcam33, pch = 1,  
+                     xlab = input$xlab3, 
+                     ylab = input$ylab3)
+                abline(fit3, col = "red", lwd = 2)
+                        lines(newx3, conf_interval3[,2], col="blue", lty=2)
+                        lines(newx3, conf_interval3[,3], col="blue", lty=2)
+                        legend("topleft", inset = 0.05, legend = c("Pontos Exp.", "fit", "C.I 95%"),
+                               col = c("black", "red", "blue"), lty=1:2, cex=1)                           
+```
+
+# Peso Desejado Camada 3
+
+```{r echo = F}
+p3 <- extract(input$y3)
+                x3 <- extract(input$x3)
+                #fit da camada 1 para camada 3
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f13 <- extract(input$f13)
+                p13 <- round(predict(fit1, newdata = data.frame(x1 = f13)),2)
+                pcam13 <- p13
+                #fit da camada 2 para camada 3
+                p2 <- as.numeric(extract(input$y2))
+                x2 <- as.numeric(extract(input$x2))
+                #dat <- as.data.frame(x,y)
+                y1 <- extract(input$y1)
+                x1 <- extract(input$x1)
+                fit1 <- lm(y1 ~ x1)
+                f12 <- extract(input$f12)
+                p12 <- round(predict(fit1, newdata = data.frame(x1 = f12)),2)
+                y2 <- as.numeric(p2) - as.numeric(p12)
+                fit2 <- lm(y2 ~ x2)
+                f23 <- extract(input$f23)
+                p23 <- round(predict(fit2, newdata = data.frame(x2 = f13)),2)
+                pcam23 <- p23
+                pcam33 <- p3 - (pcam13 + pcam23)
+                fit3 <- lm(pcam33 ~ x3)
+                #summary(fit3)
+                ymin3 <- extract(input$peso3)*(1 - extract(input$desvio3)/100)
+                ymax3 <- extract(input$peso3)*(1 + extract(input$desvio3)/100)
+                fmin3 <- round((ymin3 - (fit3$coefficients[1]))/fit3$coefficients[2],2)
+                fmed3 <- round((extract(input$peso3) - (fit3$coefficients[1]))/fit3$coefficients[2],2)
+                fmax3 <- round((ymax3 - (fit3$coefficients[1]))/fit3$coefficients[2],2)
+                withMathJax(
+                        print(paste0("Peso mínimo aceitável camada 3: ", ymin3, "mg")),
+                        br(),
+                        print(paste0("Peso máximo aceitável camada 3: ", ymax3, "mg")),
+                        br(),
+                        br(),
+                        print(paste0("Força média camada 3: ", fmed3, "kN")),
+                        br(),
+                        print(paste0("Força mínima camada 3: ", fmin3, "kN")),
+                        br(),
+                        print(paste0("Força máxima camada 3: ", fmax3, "kN")),
+                        br(),
+                        br()
+                )
+```
+
+# Computed parameters in R para a camada 3
+
+```{r, echo = F}
+summary(fit2)
+```

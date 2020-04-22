@@ -1,0 +1,13 @@
+name: PATLinearReg
+title: PATLinearReg
+username:
+account: marcelo-medre
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2113944
+bundleId: 3048879
+url: https://marcelo-medre.shinyapps.io/PATLinearReg/
+when: 1587545346.2927
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app_v0.txt|app_v1.txt
